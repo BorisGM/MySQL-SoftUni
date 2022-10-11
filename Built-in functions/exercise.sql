@@ -23,3 +23,29 @@ FROM `employees`
 WHERE `job_title` NOT LIKE '%engineer%'
 ORDER BY `employee_id`;
 
+-- 05. Find Towns with Name Length
+SELECT `name`
+FROM `towns`
+WHERE CHAR_LENGTH(`name`) IN (5,6)
+ORDER BY `name` ASC;
+
+-- 06. Find Towns Starting With
+SELECT `town_id`, `name`
+FROM `towns`
+WHERE LOWER(SUBSTRING(`name`, 1, 1)) IN ('m', 'k', 'b', 'e')
+ORDER BY `name` ASC;
+
+-- 07. Find Towns Not Starting With
+SELECT `town_id`, `name`
+FROM `towns`
+WHERE LOWER(SUBSTRING(`name`, 1, 1)) NOT IN ('r', 'b', 'd')
+ORDER BY `name` ASC;
+
+-- 08. Create View Employees Hired After
+CREATE VIEW `v_employees_hired_after_2000`
+AS
+SELECT `first_name`, `last_name`
+FROM `employees`
+WHERE `hire_date` >= '2001-01-01';
+
+SELECT * FROM `v_employees_hired_after_2000`;
