@@ -96,3 +96,36 @@ UPDATE `coaches`
 SET `coach_level` = `coach_level` + 1
 WHERE LEFT(`first_name`, 1) = 'A' AND `id` IN (SELECT `coach_id` FROM `players_coaches`);
 
+-- 03. Update
+UPDATE `coaches`
+SET `coach_level` = `coach_level` + 1
+WHERE LEFT(`first_name`, 1) = 'A' AND `id` IN (SELECT `coach_id` FROM `players_coaches`);
+
+-- 04. Delete
+DELETE FROM `players`
+WHERE `age` >= 45;
+
+-- 05. Players
+SELECT `first_name`, `age`, `salary`
+FROM `players`
+ORDER BY `salary` DESC;
+
+-- 06. Young offense players without contract
+SELECT
+    `id`,
+    CONCAT(`first_name`, ' ', `last_name`) AS `full_name`,
+    `age`,
+    `position`,
+    `hire_date`
+FROM
+    `players`
+WHERE
+        `age` < 23 AND `position` = 'A'
+  AND `hire_date` IS NULL
+  AND (SELECT
+           `strength`
+       FROM
+           `skills_data`
+       WHERE
+               `skills_data_id` = `id`) > 50
+ORDER BY `salary` ASC , `age` ASC;
