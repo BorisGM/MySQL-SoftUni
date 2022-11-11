@@ -81,3 +81,45 @@ CREATE TABLE `employees`(
     REFERENCES `employees`(`id`)
 );
 
+-- 2. Insert
+INSERT INTO `cards`
+(`card_number`, `card_status`, `bank_account_id`)
+SELECT REVERSE(`full_name`), 'Active', `id`
+FROM `clients`
+WHERE `id` BETWEEN 191 AND 200;
+
+-- 3. Update
+UPDATE `employees_clients` AS ec
+    JOIN
+    (SELECT
+    ec2.`employee_id`, COUNT(ec2.`client_id`) AS `count`
+    FROM
+    `employees_clients` AS ec2
+    GROUP BY ec2.`employee_id`
+    ORDER BY `count` , ec2.`employee_id`) AS s
+SET
+    ec.`employee_id` = s.`employee_id`
+WHERE
+    ec.`employee_id` = ec.`client_id`;
+
+-- 4. Delete
+DELETE FROM `employees`
+WHERE `id` NOT IN (SELECT `employee_id` FROM `employees_clients`);
+
+-- 5. Clients
+SELECT `id`, `full_name`
+FROM `clients`
+ORDER BY `id` ASC;
+
+-- 6. Newbies
+SELECT
+    `id`,
+    CONCAT(`first_name`, ' ', `last_name`) AS `full_name`,
+    CONCAT('$', `salary`) AS `salary`,
+    `started_on`
+FROM
+    `employees`
+WHERE
+        `salary` >= 100000
+  AND DATE(`started_on`) >= '2018-01-01'
+ORDER BY `salary` DESC , `id` ASC;
