@@ -123,3 +123,70 @@ WHERE
         `salary` >= 100000
   AND DATE(`started_on`) >= '2018-01-01'
 ORDER BY `salary` DESC , `id` ASC;
+
+-- 7. Cards against Humanity
+SELECT
+    ca.`id`,
+    CONCAT(ca.`card_number`, ' : ', c.`full_name`) AS `card_token`
+FROM
+    `clients` AS c
+        JOIN
+    `bank_accounts` AS ba ON c.`id` = ba.`client_id`
+        JOIN
+    `cards` AS ca ON ba.`id` = ca.`bank_account_id`
+ORDER BY ca.`id` DESC;
+
+-- 8. Top 5 employees
+SELECT
+    CONCAT(`first_name`, ' ', `last_name`) AS `name`,
+    `started_on`,
+    `count_of_clients`
+FROM
+    `employees` AS e
+        JOIN
+    (SELECT
+         `employee_id`, COUNT(`client_id`) AS `count_of_clients`
+     FROM
+         `employees_clients`
+     GROUP BY `employee_id`) AS c ON e.`id` = c.`employee_id`
+ORDER BY `count_of_clients` DESC , `employee_id` ASC
+    LIMIT 5;
+
+-- 9. Branch cards
+SELECT
+    b.`name`, COUNT(ca.`id`) AS `count_of_cards`
+FROM
+    `branches` AS b
+        LEFT JOIN
+    `employees` AS e ON b.`id` = e.`branch_id`
+        LEFT JOIN
+    `employees_clients` AS ec ON e.`id` = ec.`employee_id`
+        LEFT JOIN
+    `clients` AS c ON ec.`client_id` = c.`id`
+        LEFT JOIN
+    `bank_accounts` AS ba ON c.`id` = ba.`client_id`
+        LEFT JOIN
+    `cards` AS ca ON ba.`id` = ca.`bank_account_id`
+GROUP BY b.`name`
+ORDER BY `count_of_cards` DESC , b.`name` ASC;
+
+-- 10. Extract client cards count
+CREATE FUNCTION udf_client_cards_count(`name` VARCHAR(30))
+    RETURNS INT
+    DETERMINISTIC
+    RETURN (
+        SELECT COUNT(ca.`id`) AS `cards`
+        FROM `clients` AS c
+                 JOIN `bank_accounts` AS b ON c.`id` = b.`client_id`
+                 JOIN `cards` AS ca on b.`id` = ca.`bank_account_id`
+        WHERE c.`full_name` = `name`);
+
+-- 11. Extract client info
+DELIMITER $$
+CREATE PROCEDURE udp_clientinfo(`name` VARCHAR(20))
+BEGIN
+SELECT c.`full_name`, c.`age`, b.`account_number`, CONCAT('$', b.`balance`) AS `balance`
+FROM `clients` AS c
+         JOIN `bank_accounts` AS b ON c.`id` = b.`client_id`
+WHERE c.`full_name` = `name`;
+END $$
