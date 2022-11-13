@@ -1,192 +1,217 @@
 -- 1. Table Design
-CREATE TABLE `pictures`(
-	`id` INT PRIMARY KEY AUTO_INCREMENT,
-    `url` VARCHAR(100) NOT NULL,
-    `added_on` DATETIME NOT NULL
+CREATE TABLE `pictures`
+(
+    `id`       INT PRIMARY KEY AUTO_INCREMENT,
+    `url`      VARCHAR(100) NOT NULL,
+    `added_on` DATETIME     NOT NULL
 );
 
-CREATE TABLE `categories`(
-	`id` INT PRIMARY KEY AUTO_INCREMENT,
+CREATE TABLE `categories`
+(
+    `id`   INT PRIMARY KEY AUTO_INCREMENT,
     `name` VARCHAR(40) NOT NULL UNIQUE
 );
 
-CREATE TABLE `products`(
-	`id` INT PRIMARY KEY AUTO_INCREMENT,
-    `name` VARCHAR(40) NOT NULL UNIQUE,
+CREATE TABLE `products`
+(
+    `id`          INT PRIMARY KEY AUTO_INCREMENT,
+    `name`        VARCHAR(40)    NOT NULL UNIQUE,
     `best_before` DATE,
-    `price` DECIMAL(10, 2) NOT NULL,
+    `price`       DECIMAL(10, 2) NOT NULL,
     `description` TEXT,
-    `category_id` INT NOT NULL,
-    `picture_id` INT NOT NULL,
+    `category_id` INT            NOT NULL,
+    `picture_id`  INT            NOT NULL,
     CONSTRAINT fk_products_categories
-    FOREIGN KEY (`category_id`)
-    REFERENCES `categories`(`id`),
+        FOREIGN KEY (`category_id`)
+            REFERENCES `categories` (`id`),
     CONSTRAINT fk_products_pictures
-    FOREIGN KEY (`picture_id`)
-    REFERENCES `pictures`(`id`)
+        FOREIGN KEY (`picture_id`)
+            REFERENCES `pictures` (`id`)
 );
 
-CREATE TABLE `towns`(
-	`id` INT PRIMARY KEY AUTO_INCREMENT,
+CREATE TABLE `towns`
+(
+    `id`   INT PRIMARY KEY AUTO_INCREMENT,
     `name` VARCHAR(20) NOT NULL UNIQUE
 );
 
-CREATE TABLE `addresses`(
-	`id` INT PRIMARY KEY AUTO_INCREMENT,
-    `name` VARCHAR(50) NOT NULL UNIQUE,
-    `town_id` INT NOT NULL,
+CREATE TABLE `addresses`
+(
+    `id`      INT PRIMARY KEY AUTO_INCREMENT,
+    `name`    VARCHAR(50) NOT NULL UNIQUE,
+    `town_id` INT         NOT NULL,
     CONSTRAINT fk_addresses_towns
-    FOREIGN KEY (`town_id`)
-    REFERENCES `towns`(`id`)
+        FOREIGN KEY (`town_id`)
+            REFERENCES `towns` (`id`)
 );
 
-CREATE TABLE `stores`(
-	`id` INT PRIMARY KEY AUTO_INCREMENT,
-    `name` VARCHAR(20) NOT NULL UNIQUE,
-    `rating` FLOAT NOT NULL,
+CREATE TABLE `stores`
+(
+    `id`          INT PRIMARY KEY AUTO_INCREMENT,
+    `name`        VARCHAR(20) NOT NULL UNIQUE,
+    `rating`      FLOAT       NOT NULL,
     `has_parking` TINYINT(1) DEFAULT FALSE,
-    `address_id` INT NOT NULL,
+    `address_id`  INT         NOT NULL,
     CONSTRAINT fk_stores_addresses
-    FOREIGN KEY (`address_id`)
-    REFERENCES `addresses`(`id`)
+        FOREIGN KEY (`address_id`)
+            REFERENCES `addresses` (`id`)
 );
 
-CREATE TABLE `products_stores`(
-	`product_id` INT NOT NULL,
-    `store_id` INT NOT NULL,
+CREATE TABLE `products_stores`
+(
+    `product_id` INT NOT NULL,
+    `store_id`   INT NOT NULL,
     CONSTRAINT pk_ps
-    PRIMARY KEY(`product_id`, `store_id`),
+        PRIMARY KEY (`product_id`, `store_id`),
     CONSTRAINT fk_ps_products
-    FOREIGN KEY (`product_id`)
-    REFERENCES `products`(`id`),
+        FOREIGN KEY (`product_id`)
+            REFERENCES `products` (`id`),
     CONSTRAINT fk_ps_stores
-    FOREIGN KEY (`store_id`)
-    REFERENCES `stores`(`id`)
+        FOREIGN KEY (`store_id`)
+            REFERENCES `stores` (`id`)
 );
 
-CREATE TABLE `employees`(
-	`id` INT PRIMARY KEY AUTO_INCREMENT,
-    `first_name` VARCHAR(15) NOT NULL,
+CREATE TABLE `employees`
+(
+    `id`          INT PRIMARY KEY AUTO_INCREMENT,
+    `first_name`  VARCHAR(15)    NOT NULL,
     `middle_name` CHAR(1),
-    `last_name` VARCHAR(20) NOT NULL,
-    `salary` DECIMAL(19, 2) NOT NULL DEFAULT 0,
-    `hire_date` DATE NOT NULL,
-    `manager_id` INT,
-    `store_id` INT NOT NULL,
+    `last_name`   VARCHAR(20)    NOT NULL,
+    `salary`      DECIMAL(19, 2) NOT NULL DEFAULT 0,
+    `hire_date`   DATE           NOT NULL,
+    `manager_id`  INT,
+    `store_id`    INT            NOT NULL,
     CONSTRAINT fk_employees_stores
-    FOREIGN KEY (`store_id`)
-    REFERENCES `stores`(`id`),
+        FOREIGN KEY (`store_id`)
+            REFERENCES `stores` (`id`),
     CONSTRAINT fk_employees_employees
-    FOREIGN KEY (`manager_id`)
-    REFERENCES `employees`(`id`)
+        FOREIGN KEY (`manager_id`)
+            REFERENCES `employees` (`id`)
 );
 
 -- 2. Insert
-INSERT INTO `cards`
-(`card_number`, `card_status`, `bank_account_id`)
-SELECT REVERSE(`full_name`), 'Active', `id`
-FROM `clients`
-WHERE `id` BETWEEN 191 AND 200;
+INSERT INTO `products_stores`
+    (`product_id`, `store_id`)
+SELECT `id`, 1
+FROM `products`
+WHERE `id` NOT IN (SELECT `product_id` FROM `products_stores`);
 
 -- 3. Update
-UPDATE `employees_clients` AS ec
-    JOIN
-    (SELECT
-    ec2.`employee_id`, COUNT(ec2.`client_id`) AS `count`
-    FROM
-    `employees_clients` AS ec2
-    GROUP BY ec2.`employee_id`
-    ORDER BY `count` , ec2.`employee_id`) AS s
 SET
-    ec.`employee_id` = s.`employee_id`
-WHERE
-    ec.`employee_id` = ec.`client_id`;
+foreign_key_checks = 0;
+UPDATE `employees` AS e
+    LEFT JOIN `stores` AS s
+ON e.`store_id` = s.`id`
+    SET e.`manager_id` = 3 AND e.`salary` = e.`salary` - 500
+WHERE s.`name` NOT IN ('' Cardguard '', '' Veribet '') AND YEAR (DATE (e.`hire_date`)) > 2003;
 
 -- 4. Delete
-DELETE FROM `employees`
-WHERE `id` NOT IN (SELECT `employee_id` FROM `employees_clients`);
+DELETE
+FROM `employees` AS e
+WHERE (e.`manager_id` IS NOT NULL AND e.`manager_id` != e.`id`)
+  AND e.`salary` >= 6000;
 
--- 5. Clients
-SELECT `id`, `full_name`
-FROM `clients`
-ORDER BY `id` ASC;
+-- 5. Employees
+SELECT `first_name`, `middle_name`, `last_name`, `salary`, `hire_date`
+FROM `employees`
+ORDER BY `hire_date` DESC;
 
--- 6. Newbies
-SELECT
-    `id`,
-    CONCAT(`first_name`, ' ', `last_name`) AS `full_name`,
-    CONCAT('$', `salary`) AS `salary`,
-    `started_on`
-FROM
-    `employees`
-WHERE
-        `salary` >= 100000
-  AND DATE(`started_on`) >= '2018-01-01'
-ORDER BY `salary` DESC , `id` ASC;
+-- 6. Products with old pictures
+SELECT p.`name`                                   AS `product_name`,
+       p.`price`,
+       p.`best_before`,
+       CONCAT(LEFT(p.`description`, 10), ''...'') AS `short_description`,
+       pic.`url`
+FROM `products` AS p
+         JOIN
+     `pictures` AS pic ON p.`picture_id` = pic.`id`
+WHERE CHAR_LENGTH(p.`description`) > 100
+    AND YEAR (
+    DATE (pic.`added_on`))
+    < 2019
+  AND p.`price`
+    > 20
+ORDER BY p.`price` DESC;
 
--- 7. Cards against Humanity
-SELECT
-    ca.`id`,
-    CONCAT(ca.`card_number`, ' : ', c.`full_name`) AS `card_token`
-FROM
-    `clients` AS c
-        JOIN
-    `bank_accounts` AS ba ON c.`id` = ba.`client_id`
-        JOIN
-    `cards` AS ca ON ba.`id` = ca.`bank_account_id`
-ORDER BY ca.`id` DESC;
+-- 7. Counts of products in stores
+SELECT s.`name`,
+       COUNT(p.`id`)            AS `product_count`,
+       ROUND(AVG(p.`price`), 2) AS `avg`
+FROM `stores` AS s
+         LEFT JOIN
+     `products_stores` AS ps ON s.`id` = ps.`store_id`
+         LEFT JOIN
+     `products` AS p ON ps.`product_id` = p.`id`
+GROUP BY s.`name`
+ORDER BY `product_count` DESC, `avg` DESC, s.`id` ASC;
 
--- 8. Top 5 employees
-SELECT
-    CONCAT(`first_name`, ' ', `last_name`) AS `name`,
-    `started_on`,
-    `count_of_clients`
-FROM
-    `employees` AS e
-        JOIN
-    (SELECT
-         `employee_id`, COUNT(`client_id`) AS `count_of_clients`
-     FROM
-         `employees_clients`
-     GROUP BY `employee_id`) AS c ON e.`id` = c.`employee_id`
-ORDER BY `count_of_clients` DESC , `employee_id` ASC
-    LIMIT 5;
+-- 8. Specific employee
+SELECT CONCAT(e.`first_name`, '' '', e.`last_name`) AS `Full_name`,
+       s.`name`                                     AS `Store_name`,
+       a.`name`                                     AS `address`,
+       e.`salary`
+FROM `employees` AS e
+         LEFT JOIN
+     `stores` AS s ON e.`store_id` = s.`id`
+         LEFT JOIN
+     `addresses` AS a ON s.`address_id` = a.`id`
+WHERE e.`salary` < 4000
+  AND a.`name` LIKE ''%5%''
+        AND CHAR_LENGTH(s.`name`) > 8
+HAVING `Full_name` LIKE ''%n'';
 
--- 9. Branch cards
-SELECT
-    b.`name`, COUNT(ca.`id`) AS `count_of_cards`
-FROM
-    `branches` AS b
-        LEFT JOIN
-    `employees` AS e ON b.`id` = e.`branch_id`
-        LEFT JOIN
-    `employees_clients` AS ec ON e.`id` = ec.`employee_id`
-        LEFT JOIN
-    `clients` AS c ON ec.`client_id` = c.`id`
-        LEFT JOIN
-    `bank_accounts` AS ba ON c.`id` = ba.`client_id`
-        LEFT JOIN
-    `cards` AS ca ON ba.`id` = ca.`bank_account_id`
-GROUP BY b.`name`
-ORDER BY `count_of_cards` DESC , b.`name` ASC;
+-- 9. Find all information of stores
+SELECT REVERSE(s.`name`)                          AS `reversed_name`,
+       CONCAT(UPPER(t.`name`), '' - '', a.`name`) AS `full_address`,
+       COUNT(e.`id`)                              AS `employees_count`
+FROM `stores` AS s
+         LEFT JOIN `employees` AS e ON s.`id` = e.`store_id`
+         LEFT JOIN `addresses` AS a ON s.`address_id` = a.`id`
+         LEFT JOIN `towns` AS t ON a.`town_id` = t.`id`
+GROUP BY s.`id`
+HAVING `employees_count` >= 1
+ORDER BY `full_address` ASC;
 
--- 10. Extract client cards count
-CREATE FUNCTION udf_client_cards_count(`name` VARCHAR(30))
-    RETURNS INT
+-- 10. Find name of top paid employee by store name
+CREATE FUNCTION udf_top_paid_employee_by_store(store_name VARCHAR (50))
+    RETURNS VARCHAR(200)
     DETERMINISTIC
-    RETURN (
-        SELECT COUNT(ca.`id`) AS `cards`
-        FROM `clients` AS c
-                 JOIN `bank_accounts` AS b ON c.`id` = b.`client_id`
-                 JOIN `cards` AS ca on b.`id` = ca.`bank_account_id`
-        WHERE c.`full_name` = `name`);
+    RETURN (SELECT CONCAT(e.`first_name`,
+                          '' '',
+                          e.`middle_name`,
+                          ''. '',
+                          e.`last_name`,
+                          '' works in store for '',
+                          TIMESTAMPDIFF(YEAR,
+                DATE(e.`hire_date`), ''2020 - 10 - 18 ''),
+                          '' years'') AS `full_info`
+            FROM `employees` AS e
+                     JOIN
+                 `stores` AS s ON e.`store_id` = s.`id`
+            WHERE s.`name` = store_name
+            ORDER BY e.`salary` DESC
+        LIMIT 1);
 
--- 11. Extract client info
-DELIMITER $$
-CREATE PROCEDURE udp_clientinfo(`name` VARCHAR(20))
+-- 11. Update product price by address
+CREATE PROCEDURE udp_update_product_price(address_name VARCHAR (50))
 BEGIN
-SELECT c.`full_name`, c.`age`, b.`account_number`, CONCAT('$', b.`balance`) AS `balance`
-FROM `clients` AS c
-         JOIN `bank_accounts` AS b ON c.`id` = b.`client_id`
-WHERE c.`full_name` = `name`;
-END $$
+	IF LEFT
+(address_name, 1) = 0
+		THEN
+UPDATE `products` AS p
+    JOIN `products_stores` AS ps
+ON p.`id` = ps.`product_id`
+    JOIN `stores` AS s ON ps.`store_id` = s.`id`
+    JOIN `addresses` AS a ON s.`address_id` = a.`id`
+    SET p.`price` = p.`price` + 100
+WHERE a.`name` = address_name;
+ELSE
+UPDATE `products` AS p
+    JOIN `products_stores` AS ps
+ON p.`id` = ps.`product_id`
+    JOIN `stores` AS s ON ps.`store_id` = s.`id`
+    JOIN `addresses` AS a ON s.`address_id` = a.`id`
+    SET p.`price` = p.`price` + 200
+WHERE a.`name` = address_name;
+END IF;
+END
