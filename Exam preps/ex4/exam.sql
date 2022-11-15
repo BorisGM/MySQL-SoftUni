@@ -66,3 +66,85 @@ CREATE TABLE `cars_drivers`(
     FOREIGN KEY (`driver_id`)
     REFERENCES `drivers`(`id`)
 );
+
+-- 02. Insert
+INSERT INTO `clients`
+(`full_name`, `phone_number`)
+SELECT
+    CONCAT(d.`first_name`, ' ', d.`last_name`),
+    CONCAT('(088) 9999', d.`id` * 2)
+FROM `drivers` AS d
+WHERE d.`id` BETWEEN 10 AND 20;
+
+-- 03. Update
+UPDATE `cars`
+SET
+    `condition` = 'C'
+WHERE
+        `mileage` >= 800000
+   OR `mileage` IS NULL AND `year` <= 2010
+    AND `make` NOT IN ('Mercedes-Benz');
+
+-- 04. Delete
+DELETE c FROM `clients` AS c
+        LEFT JOIN
+    `courses` AS co ON c.`id` = co.`client_id`
+WHERE
+    co.`id` IS NULL
+    AND CHAR_LENGTH(c.`full_name`);
+
+-- 05. Cars
+SELECT
+    `make`, `model`, `condition`
+FROM
+    `cars`
+ORDER BY `id` ASC;
+
+-- 06. Drivers and Cars
+SELECT
+    d.`first_name`,
+    d.`last_name`,
+    c.`make`,
+    c.`model`,
+    c.`mileage`
+FROM
+    `cars` AS c
+        JOIN
+    `cars_drivers` AS cd ON c.`id` = cd.`car_id`
+        JOIN
+    `drivers` AS d ON cd.`driver_id` = d.`id`
+WHERE
+    c.`mileage` IS NOT NULL
+ORDER BY c.`mileage` DESC , d.`first_name` ASC;
+
+-- 07. Number of courses
+SELECT
+    c.`id` AS `car_id`,
+    c.`make`,
+    c.`mileage`,
+    COUNT(co.`id`) AS `count_of_courses`,
+    ROUND(AVG(co.`bill`), 2) AS `avg_bill`
+FROM
+    `cars` AS c
+        LEFT JOIN
+    `courses` AS co ON c.`id` = co.`car_id`
+GROUP BY c.`id`
+HAVING `count_of_courses` != 2
+ORDER BY `count_of_courses` DESC , `car_id` ASC;
+
+-- 08. Regular clients
+SELECT
+    c.`full_name`,
+    COUNT(c.`id`) AS `count_of_cars`,
+    SUM(co.`bill`) AS `total_sum`
+FROM
+    `clients` AS c
+        JOIN
+    `courses` AS co ON c.`id` = co.`client_id`
+        JOIN
+    `cars` AS ca ON co.`car_id` = ca.`id`
+WHERE
+        c.`full_name` LIKE '_a%'
+GROUP BY c.`id`
+HAVING `count_of_cars` > 1
+ORDER BY c.`full_name`;
