@@ -57,3 +57,54 @@ CREATE TABLE `travel_cards`(
     REFERENCES `journeys`(`id`)
 );
 
+-- 2. Insert
+INSERT INTO `travel_cards`
+(`card_number`,
+ `job_during_journey`,
+ `colonist_id`,
+ `journey_id`)
+    (SELECT
+         CASE
+             WHEN `birth_date` > '1980-01-01'
+                 THEN CONCAT(YEAR(`birth_date`), DAY(`birth_date`), LEFT(`ucn`, 4))
+             ELSE CONCAT(YEAR(`birth_date`), MONTH(`birth_date`), RIGHT(`ucn`, 4))
+             END,
+         CASE
+             WHEN `id` % 2 = 0 THEN 'Pilot'
+             WHEN `id` % 3 = 0 THEN 'Cook'
+             ELSE 'Engineer'
+             END,
+         `id`,
+         LEFT(`ucn`, 1)
+     FROM `colonists`
+     WHERE `id` BETWEEN 96 AND 100);
+
+-- 3. Update
+UPDATE `journeys`
+SET `purpose` =
+        CASE
+            WHEN `id` % 2 = 0 THEN 'Medical'
+            WHEN `id` % 3 = 0 THEN 'Technical'
+            WHEN `id` % 5 = 0 THEN 'Educational'
+            WHEN `id` % 7 = 0 THEN 'Military'
+            ELSE `purpose`
+            END;
+
+-- 4. Delete
+DELETE FROM `colonists`
+WHERE `id` NOT IN (
+    SELECT `colonist_id` FROM `travel_cards`
+);
+
+-- 5. Extract all travel cards
+SELECT `card_number`, `job_during_journey`
+FROM `travel_cards`
+ORDER BY `card_number` ASC;
+
+-- 6. Extract all colonists
+SELECT
+    `id`,
+    CONCAT(`first_name`, ' ', `last_name`) AS `full_name`,
+    `ucn`
+FROM `colonists`
+ORDER BY `first_name` ASC, `last_name` ASC, `id` ASC;
